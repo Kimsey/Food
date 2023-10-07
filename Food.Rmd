@@ -1,0 +1,43 @@
+---
+title: "Food"
+author: "JaSai"
+date: "2023-10-05"
+output: html_document
+---
+
+```{r}
+# Libraries
+library(readxl)
+library(xlsx)
+library("tidyr")
+library("dplyr")
+```
+
+```{r}
+# Data from: https://databank.worldbank.org/source/world-development-indicators#
+data <- read_excel("P_Data_Extract_From_World_Development_Indicators.xlsx")[, c(1, 2, 11)]
+# Data from: https://ourworldindata.org/grapher/global-hunger-index
+data2 <-read.csv("global-hunger-index.csv")[, 1:4]
+```
+
+```{r}
+# Creating a new column as a double type
+data$Food <- as.double(data$`2021 [YR2021]`) 
+# Fill in missing values with zero 
+temp <- (data %>% mutate(Food = coalesce(Food, 0)))
+# Make it as a data.frame type, drop values less than zero and get wanted columns
+df <- as.data.frame(temp[temp$Food > 0, ][, c(1, 2, 4)])
+# Make it as a data.frame type and get wanted columns 
+df2 <- as.data.frame(data2[data2$Year == 2021,][, c(1, 2, 4)])
+# Rename the columns
+df2 <- df2 %>% rename("Country Name" = 1, "Country Code" = 2, "Food" = 3)
+# Merge the data.frame by rows
+df <- rbind(df, df2)
+# Drop the duplicated
+df <- df[!duplicated(df$`Country Code`, fromLast=TRUE), ]
+```
+
+```{r}
+# Make an excel file 
+write.xlsx(df, file = "Food.xlsx", row.names=FALSE, col.names=TRUE)
+```
